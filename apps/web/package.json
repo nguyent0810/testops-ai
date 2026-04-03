@@ -17,6 +17,7 @@
     "@repo/contracts": "workspace:*",
     "@repo/db": "workspace:*",
     "bullmq": "^5.72.0",
+    "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.3",
     "ioredis": "^5.10.1",
     "next": "^15.1.3",

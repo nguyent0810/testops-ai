@@ -46,7 +46,7 @@ If DDL fails through a pooler, use Neon’s **direct (non-pooled)** connection s
 1. Connect the Git repo to Vercel.
 2. Set **Root Directory** to **`apps/web`** (so Next.js resolves correctly).
 3. Vercel will use `apps/web/vercel.json` for install/build commands that run the monorepo from the repo root.
-4. Add environment variables in the Vercel project (see `apps/web/.env.example` and sections below).
+4. Add environment variables in the Vercel project (see `apps/web/.env.example` and sections below). **Clerk:** set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` for **Production** (and Preview if needed). Without `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, the app throws *Missing publishableKey* at runtime. Redeploy after adding or changing `NEXT_PUBLIC_*` vars so they are inlined into the client bundle.
 5. In **Clerk**, set the production **Frontend API / URLs** and add webhook endpoint:  
    `https://<your-domain>/api/webhooks/clerk` with the same **`CLERK_WEBHOOK_SIGNING_SECRET`** as in Vercel.
 
