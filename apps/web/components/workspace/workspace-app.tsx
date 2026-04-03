@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlphaQaChecklist } from "@/components/workspace/alpha-qa-checklist";
 
@@ -221,6 +222,7 @@ function jobKindLabel(kind: string): string {
 }
 
 export function WorkspaceApp() {
+  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [projectsErr, setProjectsErr] = useState<string | null>(null);
@@ -263,41 +265,78 @@ export function WorkspaceApp() {
   documentIdRef.current = documentId;
 
   useEffect(() => {
+    if (!clerkLoaded) {
+      return;
+    }
+    if (!isSignedIn) {
+      setLoadingBoot(false);
+      setProjectsErr("You need to sign in to view your workspace.");
+      return;
+    }
+
+    let cancelled = false;
+
     void (async () => {
       setLoadingBoot(true);
       setProjectsErr(null);
+
+      const doFetch = async (): Promise<number | null> => {
+        try {
+          const [p, o] = await Promise.all([
+            apiJson<{ projects: ProjectRow[] }>("/api/me/projects"),
+            apiJson<{ organizations: OrgRow[] }>("/api/me/organizations"),
+          ]);
+          if (!p.ok) {
+            if (!cancelled) setProjectsErr(p.message);
+            return null;
+          }
+          if (!o.ok) {
+            if (!cancelled) setProjectsErr(o.message);
+            return null;
+          }
+          const projList = p.data.projects;
+          const orgList = o.data.organizations;
+          if (!Array.isArray(projList) || !Array.isArray(orgList)) {
+            if (!cancelled) {
+              setProjectsErr(
+                "Workspace data was incomplete. Refresh the page and try again.",
+              );
+            }
+            return null;
+          }
+          if (cancelled) return orgList.length;
+          setProjects(projList);
+          setOrgs(orgList);
+          setProjectId((prev) => prev || projList[0]?.id || "");
+          setCreateOrgId((prev) => prev || orgList[0]?.id || "");
+          return orgList.length;
+        } catch {
+          if (!cancelled) {
+            setProjectsErr(
+              "Could not load workspace. Refresh the page or try again.",
+            );
+          }
+          return null;
+        }
+      };
+
       try {
-        const [p, o] = await Promise.all([
-          apiJson<{ projects: ProjectRow[] }>("/api/me/projects"),
-          apiJson<{ organizations: OrgRow[] }>("/api/me/organizations"),
-        ]);
-        if (!p.ok) {
-          setProjectsErr(p.message);
-          return;
+        const orgCount = await doFetch();
+        if (cancelled || orgCount === null) return;
+        if (orgCount === 0) {
+          await new Promise((r) => setTimeout(r, 2500));
+          if (cancelled) return;
+          await doFetch();
         }
-        if (!o.ok) {
-          setProjectsErr(o.message);
-          return;
-        }
-        const projList = p.data.projects;
-        const orgList = o.data.organizations;
-        if (!Array.isArray(projList) || !Array.isArray(orgList)) {
-          setProjectsErr(
-            "Workspace data was incomplete. Refresh the page and try again.",
-          );
-          return;
-        }
-        setProjects(projList);
-        setOrgs(orgList);
-        setProjectId((prev) => prev || projList[0]?.id || "");
-        setCreateOrgId((prev) => prev || orgList[0]?.id || "");
-      } catch {
-        setProjectsErr("Could not load workspace. Refresh the page or try again.");
       } finally {
-        setLoadingBoot(false);
+        if (!cancelled) setLoadingBoot(false);
       }
     })();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clerkLoaded, isSignedIn]);
 
   const loadDocuments = useCallback(async () => {
     if (!projectId) {
