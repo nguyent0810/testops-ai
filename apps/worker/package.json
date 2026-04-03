@@ -1,0 +1,29 @@
+{
+  "name": "@repo/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1022.0",
+    "@repo/contracts": "workspace:*",
+    "@repo/db": "workspace:*",
+    "bullmq": "^5.72.0",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.3",
+    "ioredis": "^5.10.1",
+    "mammoth": "^1.12.0",
+    "openai": "^6.33.0",
+    "pdf-parse": "^2.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
