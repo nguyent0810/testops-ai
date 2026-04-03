@@ -8,6 +8,10 @@ import * as schema from "../src/schema/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(__dirname, "..");
+const monorepoRoot = resolve(pkgRoot, "../..");
+// Repo root `.env` (same as web app); then allow packages/db/.env to override.
+config({ path: resolve(monorepoRoot, ".env") });
+config({ path: resolve(monorepoRoot, ".env.local") });
 config({ path: resolve(pkgRoot, ".env") });
 config({ path: resolve(pkgRoot, ".env.local") });
 
